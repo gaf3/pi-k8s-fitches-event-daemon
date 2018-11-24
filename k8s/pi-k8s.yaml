@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: event-daemon
+  namespace: fitches
+  labels:
+    app: event-daemon
+spec:
+  selector:
+    matchLabels:
+      app: event-daemon
+  template:
+    metadata:
+      labels:
+        app: event-daemon
+    spec:
+      nodeSelector:
+        button: enabled
+      containers:
+      - name: event-daemon
+        image: docker.io/gaf3/pi-k8s-fitches-event-daemon:0.1
+        imagePullPolicy: Always
+        env:
+        - name: K8S_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: REDIS_HOST
+          value: redis.fitches.svc.cluster.local
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_CHANNEL
+          value: event
+        - name: GPIO_PORT
+          value: "4"
+        - name: SLEEP
+          value: "1"
+        volumeMounts:
+        - mountPath: /dev/i2c-1
+          name:      dev-i2c-1
+        - mountPath: /sys/class/gpio
+          name:      sys-class-gpio
+        - mountPath: /sys/devices
+          name:      sys-devices
+        securityContext:
+          privileged: true
+      volumes: # => Map i2c pins and gpio pins
+      - name:     dev-i2c-1
+        hostPath:
+          path:   /dev/i2c-1
+      - name:     sys-class-gpio
+        hostPath:
+          path:   /sys/class/gpio
+      - name:     sys-devices
+        hostPath:
+          path:   /sys/devices
