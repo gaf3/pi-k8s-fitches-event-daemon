@@ -34,7 +34,7 @@ spec:
         - name: GPIO_PORT
           value: "4"
         - name: SLEEP
-          value: "1"
+          value: "0.2"
         volumeMounts:
         - mountPath: /dev/i2c-1
           name:      dev-i2c-1

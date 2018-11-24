@@ -21,7 +21,7 @@ class Daemon(object):
         self.redis = redis.StrictRedis(host=os.environ['REDIS_HOST'], port=int(os.environ['REDIS_PORT']))
         self.channel = os.environ['REDIS_CHANNEL']
         self.gpio_port = int(os.environ['GPIO_PORT'])
-        self.sleep = int(os.environ['SLEEP'])
+        self.sleep = float(os.environ['SLEEP'])
 
     def setup(self):
         """
@@ -38,12 +38,15 @@ class Daemon(object):
 
         RPi.GPIO.wait_for_edge(self.gpio_port, RPi.GPIO.RISING)
 
-        self.redis.publish(self.channel, json.dumps({
-            "node": self.node,
-            "timestamp": time.time(),
-            "type": "rising",
-            "gpio_port": self.gpio_port
-        }))
+        time.sleep(self.sleep)
+
+        if RPi.GPIO.input(self.gpio_port):
+            self.redis.publish(self.channel, json.dumps({
+                "node": self.node,
+                "timestamp": time.time(),
+                "type": "rising",
+                "gpio_port": self.gpio_port
+            }))
             
     def run(self):
         """
@@ -55,7 +58,6 @@ class Daemon(object):
         while True:
             try:
                 self.process()
-                time.sleep(self.sleep)
             except Exception as exception:
                 print(exception)
                 print(traceback.format_exc())

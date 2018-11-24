@@ -31,7 +31,7 @@ class TestService(unittest.TestCase):
         "REDIS_PORT": "667",
         "REDIS_CHANNEL": "stuff",
         "GPIO_PORT": "6",
-        "SLEEP": "7"
+        "SLEEP": "0.7"
     })
     @mock.patch("redis.StrictRedis", MockRedis)
     def setUp(self):
@@ -44,7 +44,7 @@ class TestService(unittest.TestCase):
         "REDIS_PORT": "667",
         "REDIS_CHANNEL": "stuff",
         "GPIO_PORT": "6",
-        "SLEEP": "7"
+        "SLEEP": "0.7"
     })
     @mock.patch("redis.StrictRedis", MockRedis)
     def test___init___(self):
@@ -56,7 +56,7 @@ class TestService(unittest.TestCase):
         self.assertEqual(daemon.redis.port, 667)
         self.assertEqual(daemon.channel, "stuff")
         self.assertEqual(daemon.gpio_port, 6)
-        self.assertEqual(daemon.sleep, 7)
+        self.assertEqual(daemon.sleep, 0.7)
 
     @mock.patch("RPi.GPIO.setmode")
     @mock.patch("RPi.GPIO.setup")
@@ -68,14 +68,19 @@ class TestService(unittest.TestCase):
         mock_setup.assert_called_once_with(6, RPi.GPIO.IN, pull_up_down=RPi.GPIO.PUD_DOWN)
 
     @mock.patch("RPi.GPIO.wait_for_edge")
+    @mock.patch("RPi.GPIO.input")
     @mock.patch("service.time.time")
-    def test_process(self, mock_time, mock_wait):
+    @mock.patch("service.time.sleep")
+    def test_process(self, mock_sleep, mock_time, mock_input, mock_wait):
 
         mock_time.return_value = 7
+        mock_input.return_value = True
 
         self.daemon.process()
 
         mock_wait.assert_called_once_with(6, RPi.GPIO.RISING)
+        mock_sleep.assert_called_once_with(0.7)
+        mock_input.assert_called_once_with(6)
 
         self.assertEqual(self.daemon.redis.channel, "stuff")
         self.assertEqual(json.loads(self.daemon.redis.messages[0]), {
@@ -88,13 +93,15 @@ class TestService(unittest.TestCase):
     @mock.patch("RPi.GPIO.setmode")
     @mock.patch("RPi.GPIO.setup")
     @mock.patch("RPi.GPIO.wait_for_edge")
+    @mock.patch("RPi.GPIO.input")
     @mock.patch("service.time.time")
     @mock.patch("service.time.sleep")
     @mock.patch("traceback.format_exc")
     @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
-    def test_run(self, mock_print, mock_traceback, mock_sleep, mock_time, mock_wait, mock_setup, mock_setmode):
+    def test_run(self, mock_print, mock_traceback, mock_sleep, mock_time, mock_input, mock_wait, mock_setup, mock_setmode):
 
         mock_time.return_value = 7
+        mock_input.return_value = True
 
         mock_sleep.side_effect = [None, Exception("whoops"), Exception("whoops")]
         mock_traceback.side_effect = ["spirograph", Exception("doh")]
@@ -105,6 +112,8 @@ class TestService(unittest.TestCase):
         mock_setup.assert_called_once_with(6, RPi.GPIO.IN, pull_up_down=RPi.GPIO.PUD_DOWN)
 
         mock_wait.assert_called_with(6, RPi.GPIO.RISING)
+        mock_sleep.assert_called_with(0.7)
+        mock_input.assert_called_with(6)
 
         self.assertEqual(self.daemon.redis.channel, "stuff")
         self.assertEqual(json.loads(self.daemon.redis.messages[0]), {
