@@ -1,4 +1,4 @@
-IMAGE=pi-k8s-fitches-event-daemon
+IMAGE=pi-k8s-fitches-node-event-daemon
 VERSION=0.1
 ACCOUNT=gaf3
 NAMESPACE=fitches
