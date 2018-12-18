@@ -2,10 +2,14 @@ import unittest
 import mock
 
 import os
+import sys
 import json
 import StringIO
-import RPi.GPIO
 
+sys.modules["RPi"] = mock.MagicMock()
+sys.modules["RPi.GPIO"] = mock.MagicMock()
+
+import RPi.GPIO
 import service
 
 class MockRedis(object):
